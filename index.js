@@ -10,7 +10,7 @@ const channelConfig = require('./channels-config.json');
 const slimbot = new Slimbot(botConfig.token);
 
 async function getMessages (tags) {
-    const dbURL = databaseConfig.config_url_0 + 'messagesDB' + databaseConfig.config_url_1;
+    const dbURL = process.env.MONGODB_URL_MESSAGES;
     const messagesDBConnection = await mongoose.createConnection(dbURL,  {useNewUrlParser: true,  useUnifiedTopology: true});
     const Message = messagesDBConnection.model('message', MessageSchema);
     const messages = await Message.find({tags: {$in: tags}});
@@ -22,7 +22,7 @@ async function getMessages (tags) {
 slimbot.on('message',async userMessage => {
     console.log(userMessage)
     if (userMessage.text === '/start') {
-        const dbURL = databaseConfig.config_url_0 + 'usersDB' + databaseConfig.config_url_1;
+        const dbURL = process.env.MONGODB_URL_USERS;
         const usersDBConnection = await mongoose.createConnection(dbURL,  {useNewUrlParser: true,  useUnifiedTopology: true});
         console.log('User DB connected')
         const User = usersDBConnection.model('user', UserSchema);
@@ -32,7 +32,7 @@ slimbot.on('message',async userMessage => {
         return; //todo check user is exist?
     }
     if (userMessage.text === '/update') {
-        const dbURL = databaseConfig.config_url_0 + 'usersDB' + databaseConfig.config_url_1;
+        const dbURL = process.env.MONGODB_URL_USERS;
         const usersDBConnection = await mongoose.createConnection(dbURL,  {useNewUrlParser: true,  useUnifiedTopology: true});
         const User = usersDBConnection.model('user', UserSchema);
         const user = await User.findOne({chatId: userMessage.chat.id});
@@ -58,7 +58,7 @@ slimbot.on('message',async userMessage => {
 slimbot.on('callback_query', async query => {
     if (channelConfig.tags.includes(query.data)) {
       slimbot.sendMessage(query.message.chat.id, 'Ok, ' + query.data);
-      const dbURL = databaseConfig.config_url_0 + 'usersDB' + databaseConfig.config_url_1;
+      const dbURL = process.env.MONGODB_URL_USERS;
       const usersDBConnection = await mongoose.createConnection(dbURL,  {useNewUrlParser: true,  useUnifiedTopology: true});
       console.log('User DB connected')
       const User = usersDBConnection.model('user', UserSchema);
