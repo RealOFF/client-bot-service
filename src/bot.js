@@ -12,40 +12,22 @@ const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
 
 bot.use(session());
 
-async function saveUser(chatId, name) {
-    const dbURL = process.env.MONGODB_URL_USERS;
-    const usersDBConnection = await mongoose.createConnection(dbURL,  {useNewUrlParser: true,  useUnifiedTopology: true});
-    console.log('User DB connected')
-    const User = usersDBConnection.model('user', UserSchema);
-    const isUserExist = !! await User.find({chatId});
-    if (isUserExist) {
-        usersDBConnection.close();
-        return;
-    }
-    const user = User();
-    user.chatId = chatId;
-    user.name = name;
-    await user.save();
-    usersDBConnection.close();
-    return user;
-}
-
 bot.start(async ({message, reply, session}) => {
     const chatId = message.chat.id;
     const name = message.chat.username;
     const newUser = await saveUser(chatId, name);
     if (newUser) {
-        message = `Привет, я тебя зарегестрировал.👍 Теперь ты можешь подписаться на интересующие тебя теги. Если хочешь больше информации, напиши "/help".`;
+        message = `Привет, я тебя зарегистрировал.👍 Теперь ты можешь подписаться на интересующие тебя теги. Если хочешь больше информации, напиши "/help".`;
         session.user = user;
     } else {
-        message = 'Ты уже зарегестрирован! 🤭';
+        message = 'Ты уже зарегистрирован! 🤭';
     }
     reply(message);
 });
 
 bot.help(async ({reply}) => {
     const message = `У меня есть комманды:\n"/settings" - данная команда позволяет настроить интересующие тебя теги. Выбери тег, который тебе необходим и тебе будут присылаться сообщения содержащие его.\n "/update" - данная команда присылает последние обновления постов.\n<i>Примечание: значиение зарплаты может быть указано за час/день/месяц.</i>`;
-    reply(message);
+    reply(message, {parse_mode: 'html'});
 });
 
 bot.settings(async ({reply, message, session}) => {
@@ -73,7 +55,7 @@ bot.command('update', async ({message, reply, session}) => {
     const excludedTags = user.tags.filter((tag) => !includedTags.includes(tag));
     const uniqExcludedTags = excludedTags.filter((tag, index, self) => self.indexOf(tag) === index);
     if (uniqExcludedTags.length) {
-        await reply(`К сожалению по тегам: ${uniqExcludedTags.join(', ')} – нет обновлений. 😢`);
+        await reply(`К сожалению, по тегам: ${uniqExcludedTags.join(', ')} – нет обновлений. 😢`);
     }
 });
 
@@ -100,6 +82,7 @@ bot.on('callback_query', async ({reply, update, editMessageText, session, editMe
         await editMessageReplyMarkup(Markup.inlineKeyboard(keyboard));
     } else if (tag === 'save_tags_query') {
         const newTags = session.user.tags;
+        console.log(newTags)
         await saveUserTags(chatId, newTags);
         editMessageText('Теги сохранены.');
     } else if (tag === 'cancel_tags_query') {
@@ -142,7 +125,7 @@ async function saveUserTags (chatId, newTags) {
     const dbURL = process.env.MONGODB_URL_USERS;
     const usersDBConnection = await mongoose.createConnection(dbURL,  {useNewUrlParser: true,  useUnifiedTopology: true});
     const User = usersDBConnection.model('user', UserSchema);
-    User.updateOne({chatId}, {$set: {tags: newTags}});
+    await User.update({chatId}, {$set: {tags:newTags}});
 }
 
 function getTagsKeyboard(tags, chackedTags) {
@@ -158,9 +141,43 @@ function getTagsKeyboard(tags, chackedTags) {
 }
 
 function renderPostMessage(obj) {
-    const viewMessage = `<b>📫📫📫 Сообщение содержит теги #${obj.tags.join(', #')}</b>\n<i>Читать далее по сслыке ⬇⬇⬇</i>\n\n <i>Ссылка:</i> ${obj.url}`
-    const salaryPart = obj.salary && obj.salary.value ? 
-        `\n <i>Зарплата:</i> <b>${obj.salary.value} ${obj.salary.currency}</b>` :
-        '';
+    const viewMessage = `<b>📫📫📫 Сообщение содержит теги: #${obj.tags.join(', #')}</b>\n<i>Читать далее по сслыке ⬇⬇⬇</i>\n\n <i>Ссылка:</i> ${obj.url}`;
+    let salaryPart = '';
+
+    if (obj.salary && obj.salary.value) {
+            let period;
+
+            switch(obj.salary.period) {
+                case 'DAY':
+                    period = '/ День';
+                    break;
+                case 'WEEK':
+                    period = '/ Неделя';
+                    break;
+                default:
+                    period = '';
+
+            }
+            const currency = obj.salary.currency || '';
+            salaryPart = `\n <i>Зарплата🤑:</i> <b>${obj.salary.value} ${currency} ${period}</b>`;
+    }
     return viewMessage + salaryPart;
+}
+
+async function saveUser(chatId, name) {
+    const dbURL = process.env.MONGODB_URL_USERS;
+    const usersDBConnection = await mongoose.createConnection(dbURL,  {useNewUrlParser: true,  useUnifiedTopology: true});
+    console.log('User DB connected')
+    const User = usersDBConnection.model('user', UserSchema);
+    const isUserExist = !! await User.find({chatId});
+    if (isUserExist) {
+        usersDBConnection.close();
+        return;
+    }
+    const user = User();
+    user.chatId = chatId;
+    user.name = name;
+    await user.save();
+    usersDBConnection.close();
+    return user;
 }
