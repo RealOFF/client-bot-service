@@ -2,13 +2,16 @@
   "name": "teletrans",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "src/bot.js",
   "dependencies": {
+    "dotenv": "^8.2.0",
     "mongoose": "^5.9.3",
-    "slimbot": "^4.6.0"
+    "slimbot": "^4.6.0",
+    "telegraf": "^3.36.0"
   },
   "devDependencies": {},
   "scripts": {
+    "start": "node src/bot.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
