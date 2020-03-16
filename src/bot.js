@@ -18,7 +18,7 @@ bot.start(async ({message, reply, session}) => {
     const newUser = await saveUser(chatId, name);
     if (newUser) {
         message = `Привет, я тебя зарегистрировал.👍 Теперь ты можешь подписаться на интересующие тебя теги. Если хочешь больше информации, напиши "/help".`;
-        session.user = user;
+        session.user = newUser;
     } else {
         message = 'Ты уже зарегистрирован! 🤭';
     }
@@ -44,8 +44,12 @@ bot.settings(async ({reply, message, session}) => {
 });
 
 bot.command('update', async ({message, reply, session}) => {
-   const user = await getUser(message.chat.id, session);
+    const user = await getUser(message.chat.id, session);
     console.log('Start fetch messages');
+    if (!user) {
+        await reply('Ты кто? Напиши "/start", чтобы зарегистрироваться.');
+        return;
+    }
     const postsInfo = await getMessages(user.tags);
     const includedTags = [];
     for (postInfo of postsInfo) {
@@ -164,12 +168,12 @@ function renderPostMessage(obj) {
     return viewMessage + salaryPart;
 }
 
-async function saveUser(chatId, name) {
+async function saveUser(chatId, name, session) {
     const dbURL = process.env.MONGODB_URL_USERS;
     const usersDBConnection = await mongoose.createConnection(dbURL,  {useNewUrlParser: true,  useUnifiedTopology: true});
     console.log('User DB connected')
     const User = usersDBConnection.model('user', UserSchema);
-    const isUserExist = !! await User.find({chatId});
+    const isUserExist = !! await User.find({chatId}).length;
     if (isUserExist) {
         usersDBConnection.close();
         return;
@@ -177,6 +181,7 @@ async function saveUser(chatId, name) {
     const user = User();
     user.chatId = chatId;
     user.name = name;
+    user.tags = [];
     await user.save();
     usersDBConnection.close();
     return user;
