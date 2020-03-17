@@ -106,6 +106,7 @@ async function getMessages (tags) {
     const dbURL = process.env.MONGODB_URL_MESSAGES;
     const messagesDBConnection = await mongoose.createConnection(dbURL,  {useNewUrlParser: true,  useUnifiedTopology: true});
     const Message = messagesDBConnection.model('message', MessageSchema);
+    tags = tags.map(el => el.toLowerCase());
     const messages = await Message.find({tags: {$in: tags}});
     messagesDBConnection.close();
     return messages;
