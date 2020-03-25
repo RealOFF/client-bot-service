@@ -56,7 +56,7 @@ bot.command('update', async ({message, reply, session}) => {
         await reply(renderPostMessage(postInfo), {parse_mode: 'html'});
         includedTags.push(...postInfo.tags)
     };
-    const excludedTags = user.tags.filter((tag) => !includedTags.includes(tag));
+    const excludedTags = user.tags.filter((tag) => !includedTags.includes(tag.toLowerCase()));
     const uniqExcludedTags = excludedTags.filter((tag, index, self) => self.indexOf(tag) === index);
     if (uniqExcludedTags.length) {
         await reply(`К сожалению, по тегам: ${uniqExcludedTags.join(', ')} – нет обновлений. 😢`);
