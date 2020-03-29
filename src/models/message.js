@@ -7,7 +7,7 @@ const MessageSchema = new Schema({
     url: String,
     channel: String,
     tags: Array,
-    salary: {value: Number, currency: String}
+    salary: {value: Number, currency: String, period: String}
 }, {collection: 'message'});
 
 module.exports = MessageSchema;

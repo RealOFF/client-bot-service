@@ -53,7 +53,8 @@ bot.command('update', async ({message, reply, session}) => {
     const postsInfo = await getMessages(user.tags);
     const includedTags = [];
     for (postInfo of postsInfo) {
-        await reply(renderPostMessage(postInfo), {parse_mode: 'html'});
+        const postMessage = renderPostMessage(postInfo);
+        await reply(postMessage, {parse_mode: 'html'});
         includedTags.push(...postInfo.tags)
     };
     const excludedTags = user.tags.filter((tag) => !includedTags.includes(tag.toLowerCase()));
@@ -164,7 +165,6 @@ function renderPostMessage(obj) {
                     break;
                 default:
                     period = '';
-
             }
             const currency = obj.salary.currency || '';
             salaryPart = `\n <i>Зарплата🤑:</i> <b>${obj.salary.value} ${currency} ${period}</b>`;
