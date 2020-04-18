@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const Schema = mongoose.Schema;
+const {Schema} = mongoose;
 
 const MessageSchema = new Schema({
     text: String,
@@ -10,4 +10,15 @@ const MessageSchema = new Schema({
     salary: {value: Number, currency: String, period: String}
 }, {collection: 'message'});
 
-module.exports = MessageSchema;
+async function initMessageModel() {
+    const dbURL = process.env.MONGODB_URL_MESSAGES;
+    try {
+       const connection = await mongoose.createConnection(dbURL,  {useNewUrlParser: true,  useUnifiedTopology: true});
+       console.log('Messages DB connected');
+       return connection.model('message', MessageSchema);
+    } catch(error) {
+       console.error('Connection DB error');
+    }
+ }
+
+module.exports = {initMessageModel};

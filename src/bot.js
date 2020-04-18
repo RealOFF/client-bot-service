@@ -1,21 +1,27 @@
-const mongoose = require('mongoose');
 const Telegraf = require('telegraf');
 const Markup = require('telegraf/markup');
 const session = require('telegraf/session');
 require('dotenv').config();
 
-const MessageSchema = require('./models/message');
-const UserSchema = require('./models/user');
+const {initMessageModel} = require('./models/message');
+const {initUserModel} = require('./models/user');
 const channelConfig = require('../channels-config.json');
 
 const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
+let Message;
+let User;
+initModels();
+
+async function initModels(){
+    Message = await initMessageModel();
+    User = await initUserModel();
+}
 
 bot.use(session());
 
-bot.start(async ({message, reply, session}) => {
-    const chatId = message.chat.id;
-    const name = message.chat.username;
-    const newUser = await saveUser(chatId, name);
+bot.start(async ({from, reply, session}) => {
+    const newUser = await saveUser(from);
+    let message;
     if (newUser) {
         message = `Привет, я тебя зарегистрировал.👍 Теперь ты можешь подписаться на интересующие тебя теги. Если хочешь больше информации, напиши "/help".`;
         session.user = newUser;
@@ -30,28 +36,20 @@ bot.help(async ({reply}) => {
     reply(message, {parse_mode: 'html'});
 });
 
-bot.settings(async ({reply, message, session}) => {
-    const user = await getUser(message.chat.id, session);
-    session.user.oldTags = session.user.tags;
-    const chackedTags = user.tags.map((userTag) => channelConfig.tags.indexOf(userTag));
-    const keyboard = getTagsKeyboard(channelConfig.tags, chackedTags);
-    const controlButtons = [
-        Markup.callbackButton('Сохранить 💾', 'save_tags_query'),
-        Markup.callbackButton('Отменить ❌', 'cancel_tags_query')
-    ];
-    keyboard.push(controlButtons);
-    reply('Выбери интересющие теги. 🔖🔖🔖', Markup.inlineKeyboard(keyboard).extra());
-});
+bot.settings(tagsSettingsCallback);
 
-bot.command('update', async ({message, reply, session}) => {
-    const user = await getUser(message.chat.id, session);
-    console.log('Start fetch messages');
+bot.command('update', async ({from, reply, session}) => {
+    const user = await getUser(from.id, session);
+
     if (!user) {
         await reply('Ты кто? Напиши "/start", чтобы зарегистрироваться.');
         return;
     }
+
+    console.log('Start fetching messages');
     const postsInfo = await getMessages(user.tags);
     const includedTags = [];
+
     for (postInfo of postsInfo) {
         const postMessage = renderPostMessage(postInfo);
         await reply(postMessage, {parse_mode: 'html'});
@@ -64,74 +62,89 @@ bot.command('update', async ({message, reply, session}) => {
     }
 });
 
-bot.on('callback_query', async ({reply, update, editMessageText, session, editMessageReplyMarkup}) => {
-    const tag  = update.callback_query.data;
-    const chatId = update.callback_query.message.chat.id;
-    const user = await getUser(chatId, session);
+bot.command('menu', async ({reply}) => {
+    reply('Меню', Markup
+    .keyboard([
+      ['Изменить теги', '👥 Обратная связь']
+    ])
+    .oneTime()
+    .resize()
+    .extra()
+    )
+});
 
+bot.hears('Изменить теги', async (ctx) => {
+    tagsSettingsCallback(ctx);
+});
+
+bot.hears('👥 Обратная связь', (ctx) => {
+    ctx.reply('Сcылка на чат с разработчиками.', Markup.inlineKeyboard([Markup.urlButton('👥 Обратная связь', 'https://t.me/jobot_feedback')]).extra());
+});
+
+bot.on('callback_query', async ({reply, update, editMessageText, session, editMessageReplyMarkup}) => {
+    const {from} = update.callback_query;
+    const tag  = update.callback_query.data;
+    const {id} = from;
+    let user = await getUser(id, session);
+    user = user ? user : await saveUser(from);
     if (channelConfig.tags.includes(tag)) {
-        const newTags = user.tags;
-        if (user.tags.includes(tag)) {
-            session.user.tags = newTags.filter((el) => el !== tag);
+        const newTags = user.newTags;
+        if (user.newTags.includes(tag)) {
+            session.user.newTags = newTags.filter((el) => el !== tag);
         } else {
-            session.user.tags = [...newTags, tag];
+            session.user.newTags.push(tag);
         }
         console.log('Tags updated');
-        const chackedTags = session.user.tags.map((userTag) => channelConfig.tags.indexOf(userTag));
+        const chackedTags = session.user.newTags.map((userTag) => channelConfig.tags.indexOf(userTag));
         const keyboard = getTagsKeyboard(channelConfig.tags, chackedTags);
         const controlButtons = [
             Markup.callbackButton('Сохранить 💾','save_tags_query'), 
             Markup.callbackButton('Отменить ❌','cancel_tags_query')
         ];
         keyboard.push(controlButtons);
-        await editMessageReplyMarkup(Markup.inlineKeyboard(keyboard));
+        try {
+            await editMessageReplyMarkup(Markup.inlineKeyboard(keyboard));
+        } catch(e) {
+            console.error(e);
+        }
     } else if (tag === 'save_tags_query') {
-        const newTags = session.user.tags;
-        console.log(newTags)
-        await saveUserTags(chatId, newTags);
+        const newTags = session.user.newTags;
+        session.user.tags = newTags;
+        await saveUserTags(id, newTags);
         editMessageText('Теги сохранены.');
     } else if (tag === 'cancel_tags_query') {
-        session.user.tags = session.user.oldTags;
+        session.user.newTags = session.user.tags;
         editMessageText('Теги не сохранены.');
     } else {
         console.log('Tag not exist');
         await reply('Что?????');
     }
-   });
+});
 
 
 bot.launch();
 
-
-async function getMessages (tags) {
-    const dbURL = process.env.MONGODB_URL_MESSAGES;
-    const messagesDBConnection = await mongoose.createConnection(dbURL,  {useNewUrlParser: true,  useUnifiedTopology: true});
-    const Message = messagesDBConnection.model('message', MessageSchema);
+async function getMessages (tags) {    
     tags = tags.map(el => el.toLowerCase());
     const messages = await Message.find({tags: {$in: tags}});
-    messagesDBConnection.close();
     return messages;
 }
 
-async function getUser(chatId, session) {
-    const sessionUser = session.user;
-    if (sessionUser && sessionUser.tags) {
-        return sessionUser;
-    } 
-    const dbURL = process.env.MONGODB_URL_USERS;
-    const usersDBConnection = await mongoose.createConnection(dbURL,  {useNewUrlParser: true,  useUnifiedTopology: true});
-    const User = usersDBConnection.model('user', UserSchema);
-    const user = await User.findOne({chatId});
-    usersDBConnection.close();
-    session.user = user;
-    return user;
+async function getUser(id, session) {
+    const user = session.user;
+    if (!user || !user.tags) {
+        console.log('Finding user in DB');
+        const user = await User.findOne({id});
+        session.user = user;
+    }
+    if (session.user && (!session.user.newTags || !session.user.newTags.length)) {
+        session.user.newTags = session.user.tags;
+    }
+    return session.user;
 }
 
-async function saveUserTags (chatId, newTags) {
-    const dbURL = process.env.MONGODB_URL_USERS;
-    const usersDBConnection = await mongoose.createConnection(dbURL,  {useNewUrlParser: true,  useUnifiedTopology: true});
-    const User = usersDBConnection.model('user', UserSchema);
-    await User.update({chatId}, {$set: {tags:newTags}});
+async function saveUserTags (id, newTags) {
+    await User.updateOne({id}, {$set: {tags: newTags}});
 }
 
 function getTagsKeyboard(tags, chackedTags) {
@@ -172,21 +185,29 @@ function renderPostMessage(obj) {
     return viewMessage + salaryPart;
 }
 
-async function saveUser(chatId, name, session) {
-    const dbURL = process.env.MONGODB_URL_USERS;
-    const usersDBConnection = await mongoose.createConnection(dbURL,  {useNewUrlParser: true,  useUnifiedTopology: true});
-    console.log('User DB connected')
-    const User = usersDBConnection.model('user', UserSchema);
-    const isUserExist = !! await User.find({chatId}).length;
+async function saveUser({username, id}) {
+    const isUserExist = !! await User.findOne({id});
     if (isUserExist) {
-        usersDBConnection.close();
         return;
     }
-    const user = User();
-    user.chatId = chatId;
-    user.name = name;
-    user.tags = [];
+    const user = User({
+        id,
+        name: username,
+        tags: [],
+    });
     await user.save();
-    usersDBConnection.close();
     return user;
+}
+
+async function tagsSettingsCallback({reply, from, session}) {
+    const user = await getUser(from.id, session);
+    session.user.newTags = [...session.user.tags];
+    const chackedTags = user.tags.map((userTag) => channelConfig.tags.indexOf(userTag));
+    const keyboard = getTagsKeyboard(channelConfig.tags, chackedTags);
+    const controlButtons = [
+        Markup.callbackButton('Сохранить 💾', 'save_tags_query'),
+        Markup.callbackButton('Отменить ❌', 'cancel_tags_query')
+    ];
+    keyboard.push(controlButtons);
+    reply('Выбери интересющие теги. 🔖🔖🔖', Markup.inlineKeyboard(keyboard).extra());
 }
