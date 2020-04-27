@@ -32,40 +32,21 @@ bot.start(async ({from, reply, session}) => {
 });
 
 bot.help(async ({reply}) => {
-    const message = `У меня есть комманды:\n "/menu" - данная команда позволяет вызвать меню.\n "/settings" - данная команда позволяет настроить интересующие тебя теги. Выбери тег, который тебе необходим и тебе будут присылаться сообщения содержащие его.\n "/update" - данная команда присылает последние обновления постов.\n<i>Примечание: значение зарплаты может быть указано за час/день/месяц.</i>`;
+    const message = `У меня есть комманды:\n "/menu" - данная команда позволяет вызвать меню.\n "/settings" или "Изменить теги"(в меню) - данная команда позволяет настроить интересующие тебя теги. Выбери тег, который тебе необходим и тебе будут присылаться сообщения содержащие его.\n "/updates" или "Получить вакансии"(в меню) - данная команда присылает последние обновления постов.\n<i>Примечание: значение зарплаты может быть указано за час/день/месяц.</i>`;
     reply(message, {parse_mode: 'html'});
 });
 
 bot.settings(tagsSettingsCallback);
 
-bot.command('update', async ({from, reply, session}) => {
-    const user = await getUser(from.id, session);
-
-    if (!user) {
-        await reply('Ты кто? Напиши "/start", чтобы зарегистрироваться.');
-        return;
-    }
-
-    console.log('Start fetching messages');
-    const postsInfo = await getMessages(user.tags);
-    const includedTags = [];
-
-    for (postInfo of postsInfo) {
-        const postMessage = renderPostMessage(postInfo);
-        await reply(postMessage, {parse_mode: 'html'});
-        includedTags.push(...postInfo.tags)
-    };
-    const excludedTags = user.tags.filter((tag) => !includedTags.includes(tag.toLowerCase()));
-    const uniqExcludedTags = excludedTags.filter((tag, index, self) => self.indexOf(tag) === index);
-    if (uniqExcludedTags.length) {
-        await reply(`К сожалению, по тегам: ${uniqExcludedTags.join(', ')} – нет обновлений. 😢`);
-    }
+bot.command('updates', async (ctx) => {
+    replyUpdatesCallback(ctx);
 });
 
 bot.command('menu', async ({reply}) => {
     reply('Меню', Markup
     .keyboard([
-      ['Изменить теги', '👥 Обратная связь']
+      ['Получить вакансии', 'Изменить теги'],
+      ['Помощь', '👥 Обратная связь']
     ])
     .oneTime()
     .resize()
@@ -73,8 +54,16 @@ bot.command('menu', async ({reply}) => {
     )
 });
 
+bot.hears('Получить вакансии', async (ctx) => {
+    replyUpdatesCallback(ctx);
+});
+
 bot.hears('Изменить теги', async (ctx) => {
     tagsSettingsCallback(ctx);
+});
+
+bot.hears('Помощь', async (ctx) => {
+    helpCallback(ctx);
 });
 
 bot.hears('👥 Обратная связь', (ctx) => {
@@ -210,4 +199,33 @@ async function tagsSettingsCallback({reply, from, session}) {
     ];
     keyboard.push(controlButtons);
     reply('Выбери интересющие теги. 🔖🔖🔖', Markup.inlineKeyboard(keyboard).extra());
+}
+
+async function replyUpdatesCallback({from, reply, session}) {
+    const user = await getUser(from.id, session);
+
+    if (!user) {
+        await reply('Ты кто? Напиши "/start", чтобы зарегистрироваться.');
+        return;
+    }
+
+    console.log('Start fetching messages');
+    const postsInfo = await getMessages(user.tags);
+    const includedTags = [];
+
+    for (postInfo of postsInfo) {
+        const postMessage = renderPostMessage(postInfo);
+        await reply(postMessage, {parse_mode: 'html'});
+        includedTags.push(...postInfo.tags)
+    };
+    const excludedTags = user.tags.filter((tag) => !includedTags.includes(tag.toLowerCase()));
+    const uniqExcludedTags = excludedTags.filter((tag, index, self) => self.indexOf(tag) === index);
+    if (uniqExcludedTags.length) {
+        await reply(`К сожалению, по тегам: ${uniqExcludedTags.join(', ')} – нет обновлений. 😢`);
+    }
+}
+
+async function helpCallback({reply}) {
+    const message = `У меня есть комманды:\n "/menu" - данная команда позволяет вызвать меню.\n "/settings" или "Изменить теги"(в меню) - данная команда позволяет настроить интересующие тебя теги. Выбери тег, который тебе необходим и тебе будут присылаться сообщения содержащие его.\n "/update" или "Получить вакансии"(в меню) - данная команда присылает последние обновления постов.\n<i>Примечание: значение зарплаты может быть указано за час/день/месяц.</i>`;
+    reply(message, {parse_mode: 'html'});
 }
