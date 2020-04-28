@@ -149,7 +149,7 @@ function getTagsKeyboard(tags, chackedTags) {
 }
 
 function renderPostMessage(obj) {
-    const viewMessage = `<b>📫📫📫 Сообщение содержит теги: #${obj.tags.join(', #')}</b>\n<i>Читать далее по сслыке ⬇⬇⬇</i>\n\n <i>Ссылка:</i> ${obj.url}`;
+    const viewMessage = `<b>#${obj.tags.join('  #')}</b>\n<i>Читать далее по сслыке ⬇⬇⬇</i>\n\n${obj.url}\n`;
     let salaryPart = '';
 
     if (obj.salary && obj.salary.value) {
