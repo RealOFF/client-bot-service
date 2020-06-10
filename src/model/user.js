@@ -29,7 +29,7 @@ class User {
       resolveConnectionPromise();
    }
 
-   async getById(id, session) {
+   async getById(id, session = {}) {
       await this.connectionPromise;
 
       const user = session.user;
