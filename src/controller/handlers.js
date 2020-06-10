@@ -1,7 +1,7 @@
 const channelConfig = require('../../channels-config.json');
 const Markup = require('telegraf/markup');
 const {createMenuKeyboardTemplate} = require('../view/templates/menu-keyboard-template');
-const {renderCheckboxKeyboard} = require('../view/library/checkbox-keyboard');
+const {createTagsKeyboardRenderer} = require('../view/templates/tags-keyboard-template');
 
 
 function createStartHandler({newUserMessage, userExistMessage}, {userModel}) {
@@ -30,18 +30,12 @@ function createSettingsHandler({mainWords, selectTagsMessage}, {userModel}, {que
         const user = await userModel.getById(from.id, session);
         session.user.newTags = [...session.user.tags];
         const chackedTags = user.tags.map((userTag) => channelConfig.tags.indexOf(userTag));
-        const keyboard = renderCheckboxKeyboard(
-            channelConfig.tags.map((text) => ({text, actionName: text})),
-            chackedTags,
-            Markup.callbackButton
-        );
-        console.log(keyboard);
-        const controlButtons = [
-            Markup.callbackButton(mainWords['ru'].save, queries.saveTagsQuery),
-            Markup.callbackButton(mainWords['ru'].cancel, queries.cancelTagsQuery)
-        ];
-        keyboard.push(controlButtons);
-        reply(selectTagsMessage['ru'], Markup.inlineKeyboard(keyboard).extra());
+        const keyboard = createTagsKeyboardRenderer({
+            save: mainWords['ru'].save,
+            cancel: mainWords['ru'].cancel
+        },
+        {queries})(channelConfig.tags, chackedTags);
+        reply(selectTagsMessage['ru'], keyboard);
     }
 }
 
@@ -91,7 +85,7 @@ function createCallbackQueryHandler({mainWords}, {userModel}, {queries}) {
         const tag  = update.callback_query.data;
         const {id} = from;
         let user = await userModel.getById(id, session);
-        user = user ? user : await saveUser(from);
+        user = user ? user : await userModel.save(from);
         if (channelConfig.tags.includes(tag)) {
             const newTags = user.newTags;
             if (user.newTags.includes(tag)) {
@@ -100,18 +94,14 @@ function createCallbackQueryHandler({mainWords}, {userModel}, {queries}) {
                 session.user.newTags.push(tag);
             }
             const chackedTags = session.user.newTags.map((userTag) => channelConfig.tags.indexOf(userTag));
-            const keyboard = renderCheckboxKeyboard(
-                channelConfig.tags.map((text) => ({text, actionName: text})),
-                chackedTags,
-                Markup.callbackButton
-            );
-            const controlButtons = [
-                Markup.callbackButton(mainWords['ru'].save, queries.saveTagsQuery), 
-                Markup.callbackButton(mainWords['ru'].cancel, queries.cancelTagsQuery)
-            ];
-            keyboard.push(controlButtons);
+            const keyboard = createTagsKeyboardRenderer({
+                save: mainWords['ru'].save,
+                cancel: mainWords['ru'].cancel
+            },
+            {queries})(channelConfig.tags, chackedTags, false);
+
             try {
-                await editMessageReplyMarkup(Markup.inlineKeyboard(keyboard));
+                await editMessageReplyMarkup(keyboard);
             } catch(e) {
                 console.error(e);
             }
