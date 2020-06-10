@@ -1,6 +1,7 @@
 const channelConfig = require('../../channels-config.json');
 const Markup = require('telegraf/markup');
-const createMenuKeyboardTemplate = require('../view/templates/menu-keyboard-template');
+const {createMenuKeyboardTemplate} = require('../view/templates/menu-keyboard-template');
+const {renderCheckboxKeyboard} = require('../view/library/checkbox-keyboard');
 
 
 function createStartHandler({newUserMessage, userExistMessage}, {userModel}) {
@@ -29,13 +30,18 @@ function createSettingsHandler({mainWords, selectTagsMessage}, {userModel}, {que
         const user = await userModel.getById(from.id, session);
         session.user.newTags = [...session.user.tags];
         const chackedTags = user.tags.map((userTag) => channelConfig.tags.indexOf(userTag));
-        const keyboard = getTagsKeyboard(channelConfig.tags, chackedTags);
+        const keyboard = renderCheckboxKeyboard(
+            channelConfig.tags.map((text) => ({text, actionName: text})),
+            chackedTags,
+            Markup.callbackButton
+        );
+        console.log(keyboard);
         const controlButtons = [
             Markup.callbackButton(mainWords['ru'].save, queries.saveTagsQuery),
             Markup.callbackButton(mainWords['ru'].cancel, queries.cancelTagsQuery)
         ];
         keyboard.push(controlButtons);
-        reply(selectTagsMessage, Markup.inlineKeyboard(keyboard).extra());
+        reply(selectTagsMessage['ru'], Markup.inlineKeyboard(keyboard).extra());
     }
 }
 
@@ -93,12 +99,15 @@ function createCallbackQueryHandler({mainWords}, {userModel}, {queries}) {
             } else {
                 session.user.newTags.push(tag);
             }
-            console.log('Tags updated');
             const chackedTags = session.user.newTags.map((userTag) => channelConfig.tags.indexOf(userTag));
-            const keyboard = getTagsKeyboard(channelConfig.tags, chackedTags);
+            const keyboard = renderCheckboxKeyboard(
+                channelConfig.tags.map((text) => ({text, actionName: text})),
+                chackedTags,
+                Markup.callbackButton
+            );
             const controlButtons = [
-                Markup.callbackButton(mainWords.save, queries.saveTagsQuery), 
-                Markup.callbackButton(mainWords.cancel, queries.cancelTagsQuery)
+                Markup.callbackButton(mainWords['ru'].save, queries.saveTagsQuery), 
+                Markup.callbackButton(mainWords['ru'].cancel, queries.cancelTagsQuery)
             ];
             keyboard.push(controlButtons);
             try {
@@ -110,13 +119,13 @@ function createCallbackQueryHandler({mainWords}, {userModel}, {queries}) {
             const newTags = session.user.newTags;
             session.user.tags = newTags;
             await userModel.saveTags(id, newTags);
-            editMessageText(mainWords.tagsSaved);
+            editMessageText(mainWords['ru'].tagsSaved);
         } else if (tag === queries.cancelTagsQuery) {
             session.user.newTags = session.user.tags;
-            editMessageText(mainWords.tagsNotSaved);
+            editMessageText(mainWords['ru'].tagsNotSaved);
         } else {
             console.log('Tag not exist');
-            await reply(mainWords.badQueryMessage);
+            await reply(mainWords['ru'].badQueryMessage);
         }
     }
 }
