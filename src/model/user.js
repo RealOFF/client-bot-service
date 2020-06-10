@@ -36,7 +36,8 @@ class User {
       const user = session.user;
       if (!user || !user.tags) {
          console.log('Finding user in DB');
-         const user = await this.connection.findOne({id});
+         // TODO Why without JSON manipulation does not work
+         const user = JSON.parse(JSON.stringify(await this.connection.findOne({id})));
          session.user = user;
       }
       if (session.user && (!session.user.newTags || !session.user.newTags.length)) {
