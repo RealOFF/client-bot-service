@@ -32,6 +32,7 @@ class User {
    async getById(id, session = {}) {
       await this.connectionPromise;
 
+      id = id.toString();
       const user = session.user;
       if (!user || !user.tags) {
          console.log('Finding user in DB');
@@ -47,6 +48,7 @@ class User {
    async save({username, id}) {
       await this.connectionPromise;
 
+      id = id.toString();
       const isUserExist = !! await this.connection.findOne({id});
       if (isUserExist) {
          return;
@@ -63,6 +65,7 @@ class User {
    async saveTags (id, newTags) {
       await this.connectionPromise;
 
+      id = id.toString();
       await this.connection.updateOne({id}, {$set: {tags: newTags}});
   }
 }
