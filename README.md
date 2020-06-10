@@ -9,8 +9,8 @@ Bot <= DB <= Data fetch service <= Endpoints
 Curently our app uses the [Telegaf](https://telegraf.js.org/) framework.
 The main feature used:  
 1. Commands, hears, actions.  
-2. [Middleware](https://telegraf.js.org/#/?id=use) ([session](https://telegraf.js.org/#/?id=session))  
-3. Markup ([examples](https://github.com/telegraf/telegraf/tree/develop/docs/examples/))  
+2. [Middleware](https://telegraf.js.org/#/?id=use) ([session](https://telegraf.js.org/#/?id=session) middleware).  
+3. Markup ([examples](https://github.com/telegraf/telegraf/tree/develop/docs/examples/)).  
 ### Main
 Handlers attached to commands, hears and actions. We have a handler creators that get three params (views, models, options). 
 #### Views
