@@ -1,7 +1,7 @@
 function createJobMessageRenderer({textBeforeLink, period, salary}) {
     const periodWord = period;
     const salaryWord = salary;
-    return function renderJobMessage(obj = {}) {
+    return function (obj = {}) {
         const viewMessage = `<b>#${obj.tags.join('  #')}</b>\n<i>${textBeforeLink} ⬇⬇⬇</i>\n\n${obj.url}\n`;
         let salaryPart = '';
     
@@ -28,4 +28,6 @@ function createJobMessageRenderer({textBeforeLink, period, salary}) {
     }
 }
 
-module.exports = {createJobMessageRenderer};
+module.exports = {
+    createJobMessageRenderer
+};
