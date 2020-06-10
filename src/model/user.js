@@ -20,17 +20,17 @@ class User {
       },
    };
    connection = {};
-   isConnected = false;
+   connectionPromise = {};
 
    async init(dbURL) {
+      let resolveConnectionPromise;
+      this.connectionPromise = new Promise((resolve) => resolveConnectionPromise = resolve);
       this.connection = await createConnection(this.collectionName, dbURL, this.schemaConfig);
-      this.isConnected = true;
+      resolveConnectionPromise();
    }
 
    async getById(id, session) {
-      if(!this.isConnected) {
-         return;
-      }
+      await this.connectionPromise;
 
       const user = session.user;
       if (!user || !user.tags) {
@@ -45,9 +45,7 @@ class User {
    }
 
    async save({username, id}) {
-      if(!this.isConnected) {
-         return;
-      }
+      await this.connectionPromise;
 
       const isUserExist = !! await this.connection.findOne({id});
       if (isUserExist) {
@@ -63,9 +61,7 @@ class User {
    }
 
    async saveTags (id, newTags) {
-      if(!this.isConnected) {
-         return;
-      }
+      await this.connectionPromise;
 
       await this.connection.updateOne({id}, {$set: {tags: newTags}});
   }

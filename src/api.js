@@ -10,8 +10,8 @@ const {
     createCallbackQueryHandler,
     createFeedbackHandler
 } = require('./controller/handlers');
-const {User} = require('./models/user');
-const {Message} = require('./models/message');
+const {User} = require('./model/user');
+const {Message} = require('./model/message');
 const messagePackages = require('./view/messages/index');
 const queries = require('./query-names');
 
