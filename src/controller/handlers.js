@@ -1,5 +1,6 @@
 const channelConfig = require('../../channels-config.json');
 const Markup = require('telegraf/markup');
+const createMenuKeyboardTemplate = require('../view/templates/menu-keyboard-template');
 
 
 function createStartHandler({newUserMessage, userExistMessage}, {userModel}) {
@@ -66,14 +67,14 @@ function createUpdateHandler({unknownUserMessage, noUpdatesMessage}, {userModel,
 
 function createMenuHandler({mainWords}) {
     return function ({reply}) {
-        reply(mainWords.menu, Markup
-        .keyboard([
-          [mainWords['ru'].getJobs, mainWords['ru'].changeTags],
-          [mainWords['ru'].help, mainWords['ru'].feedback]
-        ])
-        .oneTime()
-        .resize()
-        .extra()
+        reply(
+            mainWords.menu,
+            createMenuKeyboardTemplate({
+                getJobs: mainWords['ru'].getJobs,
+                changeTags: mainWords['ru'].changeTags,
+                help: mainWords['ru'].help, 
+                feedback: mainWords['ru'].feedback
+            })()
         )
     }
 }
