@@ -15,7 +15,7 @@ const {
 const {User} = require('./models/user');
 const {Message} = require('./models/message');
 const messagePackages = require('./views/messages/index');
-const queries = require('./query-names');
+const queries = require('./constants/query-names');
 
 const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
 
