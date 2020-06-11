@@ -1,6 +1,6 @@
 const channelConfig = require('../../channels-config.json');
 
-const {createMenuKeyboardTemplate} = require('../views/templates/menu-keyboard-template');
+const {createMenuKeyboardRenderer} = require('../views/templates/menu-keyboard-template');
 const {createTagsKeyboardRenderer} = require('../views/templates/tags-keyboard-template');
 const {createFeedbackLinkRenderer} = require('../views/templates/feedback-link-template');
 
@@ -69,8 +69,8 @@ function createUpdateHandler({unknownUserMessage, noUpdatesMessage}, {userModel,
 function createMenuHandler({mainWords}) {
     return function ({reply}) {
         reply(
-            mainWords.menu,
-            createMenuKeyboardTemplate({
+            mainWords['ru'].menu,
+            createMenuKeyboardRenderer({
                 getJobs: mainWords['ru'].getJobs,
                 changeTags: mainWords['ru'].changeTags,
                 help: mainWords['ru'].help, 

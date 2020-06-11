@@ -4,10 +4,14 @@ const {renderKeyboard} = require('../library/keyboard');
 
 function createMenuKeyboardRenderer({getJobs, changeTags, help, feedback}) {
     return function() {
-        return renderKeyboard(
-            [getJobs, changeTags, help, feedback],
-            Markup.keyboard,
-            2
+        const preapredData = [getJobs, changeTags, help, feedback]
+            .map((text) => ({text}));
+        return Markup.keyboard(
+            renderKeyboard(
+                preapredData,
+                (el) => el,
+                2
+            )
         )
         .oneTime()
         .resize()
