@@ -5,7 +5,7 @@ function createJobMessageRenderer({textBeforeLink, period, salary}) {
         const viewMessage = `<b>#${obj.tags.join('  #')}</b>\n<i>${textBeforeLink} ⬇⬇⬇</i>\n\n${obj.url}\n`;
         let salaryPart = '';
     
-        if (obj.salary?.value) {
+        if (obj.salary && obj.salary.value) {
                 let period;
 
                 switch(obj.salary.period) {

@@ -3,6 +3,7 @@ const channelConfig = require('../../channels-config.json');
 const {createMenuKeyboardRenderer} = require('../views/templates/menu-keyboard-template');
 const {createTagsKeyboardRenderer} = require('../views/templates/tags-keyboard-template');
 const {createFeedbackLinkRenderer} = require('../views/templates/feedback-link-template');
+const {createJobMessageRenderer} = require('../views/templates/job-message-template');
 
 
 function createStartHandler({newUserMessage, userExistMessage}, {userModel}) {
@@ -40,7 +41,16 @@ function createSettingsHandler({mainWords, selectTagsMessage}, {userModel}, {que
     }
 }
 
-function createUpdateHandler({unknownUserMessage, noUpdatesMessage}, {userModel, messageModel}) {
+function createUpdateHandler({
+    unknownUserMessage,
+    noUpdatesMessage,
+    textBeforeLink,
+    period,
+    salary
+}, {
+    userModel,
+    messageModel
+}) {
     return async function ({from, reply, session}) {
         const user = await userModel.getById(from.id, session);
     
@@ -54,7 +64,7 @@ function createUpdateHandler({unknownUserMessage, noUpdatesMessage}, {userModel,
         const includedTags = [];
     
         for (postInfo of postsInfo) {
-            const postMessage = renderPostMessage(postInfo);
+            const postMessage = createJobMessageRenderer({textBeforeLink, period, salary})(postInfo);
             await reply(postMessage, {parse_mode: 'html'});
             includedTags.push(...postInfo.tags)
         };
