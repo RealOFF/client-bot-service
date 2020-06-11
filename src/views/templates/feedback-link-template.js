@@ -7,10 +7,10 @@ function createFeedbackLinkRenderer({feedback}) {
                 feedback,
                 'https://t.me/jobot_feedback'
             )
-        ]).extra()
+        ]).extra();
     }
 }
 
 module.exports = {
     createFeedbackLinkRenderer
-}
+};
