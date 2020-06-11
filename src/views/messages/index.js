@@ -1,3 +1,4 @@
+const developerChatMessage = require('./developer-chat-message.json');
 const helpMessage = require('./help-message.json');
 const mainWords = require('./main-words.json');
 const newUserMessage = require('./new-user-message.json');
@@ -8,6 +9,7 @@ const unknownUserMessage = require('./unknown-user-messange.json');
 const userExistMessage = require('./user-exist-message.json');
 
 module.exports = {
+    developerChatMessage,
     helpMessage,
     mainWords,
     newUserMessage,

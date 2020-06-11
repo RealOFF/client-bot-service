@@ -131,9 +131,12 @@ function createCallbackQueryHandler({mainWords}, {userModel}, {queries}) {
     }
 }
 
-function createFeedbackHandler({developerChatMessage, feedback}) {
-    return function ({reply}) {
-        reply(developerChatMessage['ru'], createFeedbackLinkRenderer(feedback['ru'])());
+function createFeedbackHandler({developerChatMessage, mainWords}) {
+    return async function ({reply}) {
+        reply(
+            developerChatMessage['ru'],
+            createFeedbackLinkRenderer({feedback: mainWords['ru'].feedback})()
+        );
     }
 }
 

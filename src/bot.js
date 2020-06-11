@@ -43,7 +43,7 @@ bot.command('menu', menuHandler);
 bot.hears('Получить вакансии', updateHandler);
 bot.hears('Изменить теги', settingsHandler);
 bot.hears('Помощь', helpHandler);
-bot.hears('👥 Обратная связь', feedbackHandler);
+bot.hears('Обратная связь', feedbackHandler);
 
 bot.on(queries.callbackQuery, callbackQueryHandler);
 
