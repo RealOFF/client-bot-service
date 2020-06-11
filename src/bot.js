@@ -47,5 +47,4 @@ bot.hears('👥 Обратная связь', feedbackHandler);
 
 bot.on(queries.callbackQuery, callbackQueryHandler);
 
-
 bot.launch();
