@@ -11,10 +11,10 @@ const {
     createMenuHandler,
     createCallbackQueryHandler,
     createFeedbackHandler
-} = require('./controller/handlers');
-const {User} = require('./model/user');
-const {Message} = require('./model/message');
-const messagePackages = require('./view/messages/index');
+} = require('./controllers/handlers');
+const {User} = require('./models/user');
+const {Message} = require('./models/message');
+const messagePackages = require('./views/messages/index');
 const queries = require('./query-names');
 
 const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);

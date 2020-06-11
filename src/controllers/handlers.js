@@ -1,7 +1,7 @@
 const channelConfig = require('../../channels-config.json');
 const Markup = require('telegraf/markup');
-const {createMenuKeyboardTemplate} = require('../view/templates/menu-keyboard-template');
-const {createTagsKeyboardRenderer} = require('../view/templates/tags-keyboard-template');
+const {createMenuKeyboardTemplate} = require('../views/templates/menu-keyboard-template');
+const {createTagsKeyboardRenderer} = require('../views/templates/tags-keyboard-template');
 
 
 function createStartHandler({newUserMessage, userExistMessage}, {userModel}) {
