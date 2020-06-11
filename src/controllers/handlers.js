@@ -1,7 +1,8 @@
 const channelConfig = require('../../channels-config.json');
-const Markup = require('telegraf/markup');
+
 const {createMenuKeyboardTemplate} = require('../views/templates/menu-keyboard-template');
 const {createTagsKeyboardRenderer} = require('../views/templates/tags-keyboard-template');
+const {createFeedbackLinkRenderer} = require('../views/templates/feedback-link-template');
 
 
 function createStartHandler({newUserMessage, userExistMessage}, {userModel}) {
@@ -120,9 +121,9 @@ function createCallbackQueryHandler({mainWords}, {userModel}, {queries}) {
     }
 }
 
-function createFeedbackHandler({developerChatMessage}) {
+function createFeedbackHandler({developerChatMessage, feedback}) {
     return function ({reply}) {
-        reply(developerChatMessage, Markup.inlineKeyboard([Markup.urlButton(feedback, 'https://t.me/jobot_feedback')]).extra());
+        reply(developerChatMessage['ru'], createFeedbackLinkRenderer(feedback['ru'])());
     }
 }
 
