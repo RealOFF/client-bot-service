@@ -2,7 +2,7 @@ function createNoUpdatesMessageRenderer(vocabulary = {}) {
     return function (tags, {language = ''}) {
         const {noUpdatesText} = vocabulary[language];
 
-        const text = `${noUpdatesText[0]} ${tags.join(', ')} ${noUpdatesTags[1]}`;
+        const text = `${noUpdatesText[0]} ${tags.join(', ')} ${noUpdatesText[1]}`;
         return {text};
     }
 }

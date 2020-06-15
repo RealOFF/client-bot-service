@@ -1,7 +1,7 @@
 function createJobMessageRenderer(vocabulary = {}) {
     return function (obj = {}, {language = ''}) {
         const {
-            linkText,
+            beforeLinkText,
             salaryWord,
             hourWord,
             dayWord,
@@ -9,7 +9,7 @@ function createJobMessageRenderer(vocabulary = {}) {
         } = vocabulary[language];
 
         const viewMessage =
-            `<b>#${obj.tags.join('  #')}</b>\n<i>${linkText} ⬇⬇⬇</i>\n\n${obj.url}\n`;
+            `<b>#${obj.tags.join('  #')}</b>\n<i>${beforeLinkText} ⬇⬇⬇</i>\n\n${obj.url}\n`;
         let salaryPart = '';
     
         if (obj.salary && obj.salary.value) {
