@@ -2,7 +2,7 @@ const {createConnection} = require('../utils/database-utils');
 
 class User {
    collectionName = 'user';
-   schema = {
+   schemaConfig = {
       id: {
          type: String,
          required: true,
@@ -24,7 +24,7 @@ class User {
 
    async init(dbURL) {
       let resolveConnectionPromise;
-      this.connectionPromise = new Promise((resolve) => resolveConnectionPromise = resolve);
+      this.connectionPromise = new Promise((resolve) => {resolveConnectionPromise = resolve});
       this.connection = await createConnection(this.collectionName, dbURL, this.schemaConfig);
       resolveConnectionPromise();
    }
@@ -34,15 +34,18 @@ class User {
 
       id = id.toString();
       const user = session.user;
+
       if (!user || !user.tags) {
          console.log('Finding user in DB');
          // TODO Why without JSON manipulation does not work
          const user = JSON.parse(JSON.stringify(await this.connection.findOne({id})));
          session.user = user;
       }
+
       if (session.user && (!session.user.newTags || !session.user.newTags.length)) {
          session.user.newTags = session.user.tags;
       }
+
       return session.user;
    }
 
@@ -51,15 +54,18 @@ class User {
 
       id = id.toString();
       const isUserExist = !! await this.connection.findOne({id});
+
       if (isUserExist) {
          return;
       }
+
       const user = this.connection({
          id,
          name: username,
          tags: [],
       });
       await user.save();
+
       return user;
    }
 

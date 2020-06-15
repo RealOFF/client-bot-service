@@ -1,9 +1,9 @@
-const mongoose = require('mongoose');
+const {Schema, createConnection} = require('mongoose');
 
-async function createConnection(collectionName, dbURL, schemaConfig) {
+async function createDBConnection(collectionName, dbURL, schemaConfig) {
     try {
-        const schema = new mongoose.Schema(schemaConfig, {collection: collectionName});
-        const connection = await mongoose.createConnection(
+        const schema = new Schema(schemaConfig, {collection: collectionName});
+        const connection = await createConnection(
             dbURL,
             {
                 useNewUrlParser: true,
@@ -18,5 +18,5 @@ async function createConnection(collectionName, dbURL, schemaConfig) {
 }
 
 module.exports = {
-    createConnection
+    createConnection: createDBConnection
 };
