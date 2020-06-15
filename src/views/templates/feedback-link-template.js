@@ -1,13 +1,16 @@
 const Markup = require('telegraf/markup');
 
-function createFeedbackLinkRenderer({feedback}) {
-    return function() {
-        return Markup.inlineKeyboard([
+function createFeedbackLinkRenderer(vocabulary = {}, {url = ''}) {
+    return function({language = ''}) {
+        const {developerChatText, feedbackText} = vocabulary[language];
+
+        const interactive = Markup.inlineKeyboard([
             Markup.urlButton(
-                feedback,
-                'https://t.me/jobot_feedback'
+                feedbackText,
+                url
             )
         ]).extra();
+        return {text: developerChatText, interactive}
     }
 }
 

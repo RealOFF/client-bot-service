@@ -1,8 +1,15 @@
-function createJobMessageRenderer({textBeforeLink, period, salary}) {
-    const periodWord = period;
-    const salaryWord = salary;
-    return function (obj = {}) {
-        const viewMessage = `<b>#${obj.tags.join('  #')}</b>\n<i>${textBeforeLink} ⬇⬇⬇</i>\n\n${obj.url}\n`;
+function createJobMessageRenderer(vocabulary = {}) {
+    return function (obj = {}, {language = ''}) {
+        const {
+            linkText,
+            salaryWord,
+            hourWord,
+            dayWord,
+            weekWord
+        } = vocabulary[language];
+
+        const viewMessage =
+            `<b>#${obj.tags.join('  #')}</b>\n<i>${linkText} ⬇⬇⬇</i>\n\n${obj.url}\n`;
         let salaryPart = '';
     
         if (obj.salary && obj.salary.value) {
@@ -10,13 +17,13 @@ function createJobMessageRenderer({textBeforeLink, period, salary}) {
 
                 switch(obj.salary.period) {
                     case 'HOUR':
-                        period = '/ ' + periodWord.hour;
+                        period = '/ ' + hourWord;
                         break;
                     case 'DAY':
-                        period = '/ ' + periodWord.day;
+                        period = '/ ' + dayWord;
                         break;
                     case 'WEEK':
-                        period = '/ ' + periodWord.week;
+                        period = '/ ' + weekWord;
                         break;
                     default:
                         period = '';
@@ -24,7 +31,7 @@ function createJobMessageRenderer({textBeforeLink, period, salary}) {
                 const currency = obj.salary.currency || '';
                 salaryPart = `\n <i>${salaryWord}🤑:</i> <b>${obj.salary.value} ${currency} ${period}</b>`;
         }
-        return viewMessage + salaryPart;
+        return {text: viewMessage + salaryPart};
     }
 }
 

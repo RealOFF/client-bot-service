@@ -1,52 +1,53 @@
-const channelConfig = require('../../channels-config.json');
+const channelConfig = require('../constants/channels-config.json');
 
-const {createMenuKeyboardRenderer} = require('../views/templates/menu-keyboard-template');
-const {createTagsKeyboardRenderer} = require('../views/templates/tags-keyboard-template');
-const {createFeedbackLinkRenderer} = require('../views/templates/feedback-link-template');
-const {createJobMessageRenderer} = require('../views/templates/job-message-template');
-
-
-function createStartHandler({newUserMessage, userExistMessage}, {userModel}) {
+function createStartHandler({
+    renderNewUserMessage,
+    renderUserExistMessage
+},
+{userModel}) {
     return async function ({from, reply, session}) {
         const newUser = await userModel.save(from);
-        let message;
+        let text;
         if (newUser) {
-            message = newUserMessage['ru'];
+            const template = renderNewUserMessage({language: 'ru'});
+            text = template.text;
             session.user = newUser;
         } else {
-            message = userExistMessage['ru'];
+            const template = renderUserExistMessage({language: 'ru'});
+            text = template.text;
         }
-        reply(message);
+        reply(text);
     }
 }
 
-function createHelpHandler({helpMessage}) {
+function createHelpHandler({renderHelpMessage}) {
     return function ({reply}) {
-        const message = helpMessage['ru'];
-        reply(message, {parse_mode: 'html'});
+        const {text} = renderHelpMessage({language: 'ru'});
+        reply(text, {parse_mode: 'html'});
     }
 }
 
-function createSettingsHandler({mainWords, selectTagsMessage}, {userModel}, {queries}) {
+function createSettingsHandler({renderTagsKeyboard}, {userModel}, {queries}) {
     return async function ({reply, from, session}) {
         const user = await userModel.getById(from.id, session);
         session.user.newTags = [...session.user.tags];
         const chackedTags = user.tags.map((userTag) => channelConfig.tags.indexOf(userTag));
-        const keyboard = createTagsKeyboardRenderer({
-            save: mainWords['ru'].save,
-            cancel: mainWords['ru'].cancel
-        },
-        {queries})(channelConfig.tags, chackedTags);
-        reply(selectTagsMessage['ru'], keyboard);
+        const {text, interactive} = renderTagsKeyboard(
+            channelConfig.tags,
+            chackedTags,
+            {
+                queries,
+                language: 'ru'
+            }
+        );
+        reply(text, interactive);
     }
 }
 
 function createUpdateHandler({
-    unknownUserMessage,
-    noUpdatesMessage,
-    textBeforeLink,
-    period,
-    salary
+    renderUnknownUserMessage,
+    renderJobMessage,
+    renderNoUpdatesMessage
 }, {
     userModel,
     messageModel
@@ -55,7 +56,8 @@ function createUpdateHandler({
         const user = await userModel.getById(from.id, session);
     
         if (!user) {
-            await reply(unknownUserMessage['ru']);
+            const {text} = renderUnknownUserMessage({language: 'ru'});
+            await reply(text);
             return;
         }
     
@@ -64,34 +66,41 @@ function createUpdateHandler({
         const includedTags = [];
     
         for (postInfo of postsInfo) {
-            const postMessage = createJobMessageRenderer({textBeforeLink, period, salary})(postInfo);
-            await reply(postMessage, {parse_mode: 'html'});
+            const {text} = renderJobMessage(postInfo, {language: 'ru'});
+            await reply(text, {parse_mode: 'html'});
             includedTags.push(...postInfo.tags)
         };
         const excludedTags = user.tags.filter((tag) => !includedTags.includes(tag.toLowerCase()));
         const uniqExcludedTags = excludedTags.filter((tag, index, self) => self.indexOf(tag) === index);
         if (uniqExcludedTags.length) {
-            await reply(`${noUpdatesMessage['ru'][0]} ${uniqExcludedTags.join(', ')} ${noUpdatesMessage['ru'][1]}`);
+            const {text} = renderNoUpdatesMessage(uniqExcludedTags, {language: 'ru'}); 
+            await reply(text);
         }
     }
 }
 
-function createMenuHandler({mainWords}) {
+function createMenuHandler({renderMenuKeyboard}) {
     return function ({reply}) {
-        reply(
-            mainWords['ru'].menu,
-            createMenuKeyboardRenderer({
-                getJobs: mainWords['ru'].getJobs,
-                changeTags: mainWords['ru'].changeTags,
-                help: mainWords['ru'].help, 
-                feedback: mainWords['ru'].feedback
-            })()
-        )
+        const {text, interactive} = renderMenuKeyboard({language: 'ru'});
+        reply(text, interactive);
     }
 }
 
-function createCallbackQueryHandler({mainWords}, {userModel}, {queries}) {
-    return async function ({reply, update, editMessageText, session, editMessageReplyMarkup}) {
+function createCallbackQueryHandler({
+    renderTagsKeyboard,
+    renderTagsSavedMessage,
+    renderTagsNotSavedMessage,
+    renderBadQueryMessage
+},
+{userModel},
+{queries}) {
+    return async function ({
+        reply,
+        update,
+        editMessageText,
+        editMessageReplyMarkup,
+        session
+    }) {
         const {from} = update.callback_query;
         const tag  = update.callback_query.data;
         const {id} = from;
@@ -104,15 +113,20 @@ function createCallbackQueryHandler({mainWords}, {userModel}, {queries}) {
             } else {
                 session.user.newTags.push(tag);
             }
-            const chackedTags = session.user.newTags.map((userTag) => channelConfig.tags.indexOf(userTag));
-            const keyboard = createTagsKeyboardRenderer({
-                save: mainWords['ru'].save,
-                cancel: mainWords['ru'].cancel
-            },
-            {queries})(channelConfig.tags, chackedTags, false);
+            const chackedTags = session.user.newTags
+                    .map((userTag) => channelConfig.tags.indexOf(userTag));
+            const {interactive} = renderTagsKeyboard(
+                channelConfig.tags,
+                chackedTags,
+                {
+                    language: 'ru',
+                    isNew: false,
+                    queries
+                }
+            );
 
             try {
-                await editMessageReplyMarkup(keyboard);
+                await editMessageReplyMarkup(interactive);
             } catch(e) {
                 console.error(e);
             }
@@ -120,23 +134,24 @@ function createCallbackQueryHandler({mainWords}, {userModel}, {queries}) {
             const newTags = session.user.newTags;
             session.user.tags = newTags;
             await userModel.saveTags(id, newTags);
-            editMessageText(mainWords['ru'].tagsSaved);
+            const {text} = renderTagsSavedMessage({language: 'ru'});
+            editMessageText(text);
         } else if (tag === queries.cancelTagsQuery) {
             session.user.newTags = session.user.tags;
-            editMessageText(mainWords['ru'].tagsNotSaved);
+            const {text} = renderTagsNotSavedMessage({language: 'ru'});
+            editMessageText(text);
         } else {
             console.log('Tag not exist');
-            await reply(mainWords['ru'].badQueryMessage);
+            const {text} = renderBadQueryMessage({language: 'ru'});
+            await reply(text);
         }
     }
 }
 
-function createFeedbackHandler({developerChatMessage, mainWords}) {
+function createFeedbackHandler({renderFeedbackLink}) {
     return async function ({reply}) {
-        reply(
-            developerChatMessage['ru'],
-            createFeedbackLinkRenderer({feedback: mainWords['ru'].feedback})()
-        );
+        const {text, interactive} = renderFeedbackLink({language: 'ru'});
+        reply(text, interactive);
     }
 }
 

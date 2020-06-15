@@ -2,8 +2,18 @@ const Markup = require('telegraf/markup');
 
 const {renderCheckboxKeyboard} = require('../library/checkbox-keyboard');
 
-function createTagsKeyboardRenderer({save, cancel}, {queries}) {
-    return function(tags, chackedTags, isNew = true) {
+function createTagsKeyboardRenderer(vocabulary = {}) {
+    return function(
+        tags = [],
+        chackedTags = [],
+        {
+            isNew = true,
+            language = '',
+            queries = {}
+        }
+    ) {
+        const {saveWord, cancelWord, selectTagsText} = vocabulary[language];
+
         const keyboard = renderCheckboxKeyboard(
             tags.map((text) => ({text, actionName: text})),
             chackedTags,
@@ -11,12 +21,15 @@ function createTagsKeyboardRenderer({save, cancel}, {queries}) {
         );
 
         const controlButtons = [
-            Markup.callbackButton(save, queries.saveTagsQuery),
-            Markup.callbackButton(cancel, queries.cancelTagsQuery)
+            Markup.callbackButton(saveWord, queries.saveTagsQuery),
+            Markup.callbackButton(cancelWord, queries.cancelTagsQuery)
         ];
         keyboard.push(controlButtons);
         const inlineKeyboard = Markup.inlineKeyboard(keyboard);
-        return isNew ? inlineKeyboard.extra() : inlineKeyboard;
+        return {
+            text: selectTagsText,
+            interactive: isNew ? inlineKeyboard.extra() : inlineKeyboard
+        };
     }
 }
 
