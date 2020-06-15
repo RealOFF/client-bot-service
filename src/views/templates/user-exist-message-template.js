@@ -1,8 +1,8 @@
 function createUserExistMessageRenderer(vocabulary = {}) {
     return function ({language = ''}) {
-        const {unknownUserText} = vocabulary[language];
+        const {userExistText} = vocabulary[language];
 
-        return {text: unknownUserText};
+        return {text: userExistText};
     }
 }
 
