@@ -14,7 +14,7 @@ The main feature used:
 ### Main
 Handlers attached to commands, hears and actions. We have a handler creators that get three params (views, models, options). 
 #### Views
-Views messages are configurable and can be setting with various localizations(It can be configured in json message file).
+Views messages are configurable and can be setting with various localizations(It can be configured in json vocabulary file).
 #### Models
 This is a wrapper over a monguse scheme.
 #### Contollers
